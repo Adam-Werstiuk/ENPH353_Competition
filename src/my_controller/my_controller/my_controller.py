@@ -60,7 +60,7 @@ class MyController(Node):
 
     def send_score(self, plate, guess):
         msg = String()
-        msg.data = f'{TEAM}, {PASSWORD}, {plate}, {guess}'
+        msg.data = f'{TEAM},{PASSWORD},{plate},{guess}'
         self.score_pub.publish(msg)
 
     # TODO: IMPLEMENT
@@ -73,13 +73,13 @@ class MyController(Node):
     
     def tick(self):
         t = self.elapsed()
-        if self.state == 'WAIT' and t > 1.0:
+        if self.state == 'WAIT' and t > 5.0:
             self.send_score(0, 'NA')
             self.state = 'DRIVE'
             self.t_mark = t
         elif self.state == 'DRIVE':
-            cmd = Twist()
-            cmd.linear.x = 0.5
+            cmd = Twist() 
+            cmd.linear.x = 0.75
             self.cmd_pub.publish(cmd)
             if t - self.t_mark > 4.0:
                 self.state = 'STOP'
