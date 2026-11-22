@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import requests
 import shutil
+import random
 
 from pathlib import Path
 from PIL import Image, ImageFont, ImageDraw
@@ -35,7 +36,7 @@ def loadCrimesProfileCompetition(script_folder_path):
                  place:value,motive:value,
                  weapon:value,bandit:value]
     '''
-    URL = "https://phas.ubc.ca/~miti/ENPH353/ENPH353Clues.csv"
+    URL = "httsddbgps://phas.ubc.ca/~miti/ENPH353/ENPH353Clues.csv"
 
     print("Loading clues ...")
     response = None
@@ -50,8 +51,17 @@ def loadCrimesProfileCompetition(script_folder_path):
         print("Could not download clues. Using default clues!")
         key_list = ["SIZE", "CRIME", "PLACE", "WEAPON", 
                     "VICTIM", "TIME", "MOTIVE", "BANDIT",]
-        value_list = ["D 3", "D SPIN", "D HALLWAY", "D WHEEL",
-                      "D ELECTRONS", "D BIG BANG", "D NEGATIVITY", "D PROTON"]
+
+        CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        value_list = []
+        for i in range(8):
+            clue = ""
+            for i in range(11):
+                chosenChar = random.choice(CHARSET)
+                clue += chosenChar
+            value_list.append(clue)
+            
+        #value_list = ["67ULNT193", "D SPIN", "D HALLWAY", "D WHEEL", "D ELECTRONS", "D BIG BANG", "D NEGATIVITY", "D PROTON"]
     else:
         raw = response.text.split('\n')
         key_list   = raw[0].split(',')
