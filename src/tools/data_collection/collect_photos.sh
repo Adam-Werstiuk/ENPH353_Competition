@@ -3,14 +3,15 @@
 OUTPUT_DIR="$(cd "$(dirname "$0")" && pwd)/photos"
 mkdir -p "$OUTPUT_DIR"
 
-# read the current clueboard coordinates 
-
-# Store the coordinates in CLUEBOARD_COORDS: XYZ and angle
-
+# read the current clueboard coordinates and store in CLUEBOARD_COORDS: XYZ and angle
 CLUEBOARD_COORDS=()
 for i in 0 1 2 3 4 5 6 7; do
     CLUEBOARD_COORDS+=("$(gz model -m sign_$i --pose | tr -d '[]' | awk '/^[[:space:]]*-?[0-9]/ { a[n++] = $0 } END { split(a[0], p, " "); split(a[1], r, " "); print p[1], p[2], p[3], r[3] }')")
 done
+
+#link to the clueboard csv 
+CLUES_CSV="$HOME/ENPH353_Competition/src/2026_competition/src/world_pkg/world/clues.csv"
+
 
 HEIGHT_OFFSET=0.06 #since signs are 0.03m above the ground and the robot should spawn at 0.1m off the ground.
 # arena bounds (walls)
@@ -31,6 +32,10 @@ for coords in "${CLUEBOARD_COORDS[@]}"; do
     D=$(awk -v r="$RANDOM" 'BEGIN { print 0.5 + 1.0 * r / 32768 }') #vertical (facing) offset 
     S=$(awk -v r="$RANDOM" 'BEGIN { print -0.5 + 0.5 * r / 32768 }') #sideways offset
     ANGLEOFFSET=$(awk -v r="$RANDOM" 'BEGIN { print -0.15 + 0.3 * r / 32768 }') #facing angle offset (rad)
+
+    #read the randomly-generated clue texts 
+    # row i+1 of clues.csv is the clue on sign_i. tr removes the Windows-style line ending and turns the comma into an underscore
+    CLUE=$(sed -n "$((i + 1))p" "$CLUES_CSV" | tr -d '\r' | tr ',' '_')
 
     read -r SIGNX SIGNY SIGNZ SIGNANGLE <<< "$coords"
 
@@ -61,7 +66,7 @@ for coords in "${CLUEBOARD_COORDS[@]}"; do
 
     sleep 1.0
 
-    python3 take_photo.py "$OUTPUT_DIR/photo${i}.png"
+    python3 take_photo.py "$OUTPUT_DIR/${CLUE}.png"  #saves the labelled photo 
 
     i=$((i + 1))
 
