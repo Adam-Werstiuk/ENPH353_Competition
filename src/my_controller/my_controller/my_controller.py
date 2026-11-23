@@ -41,6 +41,11 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
+import subprocess
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+from .lane_follower import LaneFollower
 
 TEAM = 'AandA'
 PASSWORD = 'password'
@@ -54,6 +59,15 @@ class MyController(Node):
         self.state = 'WAIT'
         self.t_mark = 0.0
         self.timer = self.create_timer(0.1, self.tick)
+        #self.teleport(-5.5, 0.4, 80)
+
+        self.bridge = CvBridge()
+        self.follower = LaneFollower()
+        self.latest_frame = None
+        self.create_subscription(Image, '/camera/image_raw', self.image_callback, 1)
+
+    def image_callback(self, msg):
+        self.latest_frame = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
 
     def elapsed(self):
         return (self.get_clock().now() - self.t0).nanoseconds * 1e-9
@@ -68,8 +82,10 @@ class MyController(Node):
         return 0
 
     # TODO: Implement
-    def teleport(self, x_location, y_location, angle):
-        return 0
+    def teleport(self, xlocation, ylocation, angle, zlocation = 0):
+        TELEPORT = "/home/fizzer/2026_competition_ws/src/tools/data_collection/teleport.sh"
+        cmd = ['bash', TELEPORT, str(xlocation), str(ylocation), str(angle), str(zlocation)]
+        self.teleport_proc = subprocess.Popen(cmd)
     
     def tick(self):
         t = self.elapsed()
@@ -88,8 +104,17 @@ class MyController(Node):
             self.cmd_pub.publish(Twist())
             if t - self.t_mark > 1.0:
                 self.send_score(-1, 'NA')
-                self.state = 'DONE'
-                self.timer.cancel()
+                self.state = 'PIDDIRVE'
+                #self.timer.cancel()
+        elif self.state == 'PIDDIRVE':
+            if self.latest_frame is not None:
+                linear, angular, debug = self.follower.step(self.latest_frame, t)
+                cmd = Twist()
+                cmd.linear.x = linear
+                cmd.angular.z = angular
+                self.cmd_pub.publish(cmd)
+                cv2.imshow('lane', debug)
+                cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
