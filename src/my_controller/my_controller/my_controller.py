@@ -60,7 +60,7 @@ class MyController(Node):
 
     def send_score(self, plate, guess):
         msg = String()
-        msg.data = f'{TEAM}, {PASSWORD}, {plate}, {guess}'
+        msg.data = f'{TEAM}, {PASSWORD},{plate},{guess}'
         self.score_pub.publish(msg)
 
     # TODO: IMPLEMENT
