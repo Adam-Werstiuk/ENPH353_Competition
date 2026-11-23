@@ -9,8 +9,8 @@ YAW=$3
 Z="${4:-0.1}" 
 
 #convert angle to the correct value for the simulation 
-QZ=$(awk -v yaw="$YAW" 'BEGIN {print sin(yaw * 3.14159265 / 360)}')
-QW=$(awk -v yaw="$YAW" 'BEGIN {print cos(yaw * 3.14159265 / 360)}')
+QZ=$(awk -v yaw="$YAW" 'BEGIN {print sin(yaw * 3.1415 / 360)}')
+QW=$(awk -v yaw="$YAW" 'BEGIN {print cos(yaw * 3.1415 / 360)}')
 
 # Stop the wheels first so the robot doesn't keep driving after the jump
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{}" >/dev/null 2>&1 || true
