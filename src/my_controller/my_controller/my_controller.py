@@ -45,7 +45,8 @@ import subprocess
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
-from .lane_follower import LaneFollower
+from .driving_state_machine import DrivingStateMachine
+from .detectors import isCrosswalkAhead
 
 TEAM = 'AandA'
 PASSWORD = 'password'
@@ -62,7 +63,7 @@ class MyController(Node):
         #self.teleport(-5.5, 0.4, 80)
 
         self.bridge = CvBridge()
-        self.follower = LaneFollower()
+        self.sm = DrivingStateMachine(crosswalk_detector=isCrosswalkAhead, nHits=6) #crosswalk searching
         self.latest_frame = None
         self.create_subscription(Image, '/camera/image_raw', self.image_callback, 1)
 
@@ -91,30 +92,15 @@ class MyController(Node):
         t = self.elapsed()
         if self.state == 'WAIT' and t > 5.0:
             self.send_score(0, 'NA')
-            self.state = 'DRIVE'
+            self.state = 'RUN'
             self.t_mark = t
-        elif self.state == 'DRIVE':
-            cmd = Twist() 
-            cmd.linear.x = 0.75
-            self.cmd_pub.publish(cmd)
-            if t - self.t_mark > 4.0:
-                self.state = 'STOP'
-                self.t_mark = t
-        elif self.state == 'STOP':
-            self.cmd_pub.publish(Twist())
-            if t - self.t_mark > 1.0:
-                self.send_score(-1, 'NA')
-                self.state = 'PIDDIRVE'
-                #self.timer.cancel()
-        elif self.state == 'PIDDIRVE':
+        elif self.state == 'RUN':
             if self.latest_frame is not None:
-                linear, angular, debug = self.follower.step(self.latest_frame, t)
+                linear, angular = self.sm.step(self.latest_frame, t)
                 cmd = Twist()
                 cmd.linear.x = linear
                 cmd.angular.z = angular
                 self.cmd_pub.publish(cmd)
-                cv2.imshow('lane', debug)
-                cv2.waitKey(1)
 
 def main(args=None):
     rclpy.init(args=args)
